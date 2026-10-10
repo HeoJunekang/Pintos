@@ -29,6 +29,10 @@ static bool too_many_loops (unsigned loops);
 static void busy_wait (int64_t loops);
 static void real_time_sleep (int64_t num, int32_t denom);
 
+/* block 상태인 thread 들을 모아둔 리스트 */
+static struct list sleep_List;
+
+
 /* Sets up the 8254 Programmable Interval Timer (PIT) to
    interrupt PIT_FREQ times per second, and registers the
    corresponding interrupt. */
@@ -43,6 +47,9 @@ timer_init (void) {
 	outb (0x40, count >> 8);
 
 	intr_register_ext (0x20, timer_interrupt, "8254 Timer");
+
+	//timer list 초기생성
+	list_init (&sleep_List);
 }
 
 /* Calibrates loops_per_tick, used to implement brief delays. */
@@ -89,12 +96,24 @@ timer_elapsed (int64_t then) {
 
 /* Suspends execution for approximately TICKS timer ticks. */
 void
-timer_sleep (int64_t ticks) {
-	int64_t start = timer_ticks ();
+timer_sleep (int64_t ticks) { //인자: 몇틱이나 기다릴건지
+	if(ticks <=0){
+		return;
+	}
+	enum intr_level old_level;
 
-	ASSERT (intr_get_level () == INTR_ON);
-	while (timer_elapsed (start) < ticks)
-		thread_yield ();
+	ASSERT (intr_get_level () == INTR_ON);// interrupt 켜져있음
+	old_level = intr_disable ();
+	int64_t start = timer_ticks (); //언제 시작했는지 저장
+	struct thread *curr = thread_current (); // 현재 thread
+	curr-> wake_tick = start + ticks; 		// 깨어날 tick 할당
+
+	
+	list_push_back(&sleep_List, &curr->elem); // sleep_list에 block상태 thread 추가
+	thread_block();
+	intr_set_level (old_level);
+	// while (timer_elapsed (start) < ticks) // elapsed = 얼마나 기다렸는지 즉, 시간이 안됐으면 cpu 양보
+	// 	thread_yield ();
 }
 
 /* Suspends execution for approximately MS milliseconds. */
@@ -120,12 +139,27 @@ void
 timer_print_stats (void) {
 	printf ("Timer: %"PRId64" ticks\n", timer_ticks ());
 }
-
+
 /* Timer interrupt handler. */
 static void
 timer_interrupt (struct intr_frame *args UNUSED) {
 	ticks++;
 	thread_tick ();
+
+	struct list_elem *e = list_begin(&sleep_List);	//sleep_list 처음 리턴
+	while(e != list_end(&sleep_List)){ 								// sleep_list가 끝날때까지
+		struct thread *t = list_entry(e, struct thread, elem);			//elem이 속한 thread 리턴
+		int64_t ticks = timer_ticks();
+		struct list_elem *next_elem = e->next; // list에서 지워지면 다음 elem을 보기위함
+
+		if(t->wake_tick > ticks){ //아직 시간이 안됨
+			
+		}else{ 					//지났거나 시간이 됨
+			list_remove(e);
+			thread_unblock(t);
+		}
+		e = next_elem;
+	}
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer

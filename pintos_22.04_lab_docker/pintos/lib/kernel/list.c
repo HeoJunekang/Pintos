@@ -90,6 +90,7 @@ list_end (struct list *list) {
 	return &list->tail;
 }
 
+
 /* Returns the LIST's reverse beginning, for iterating through
    LIST in reverse order, from back to front. */
 struct list_elem *
@@ -154,7 +155,7 @@ list_tail (struct list *list) {
    interior element or a tail.  The latter case is equivalent to
    list_push_back(). */
 void
-list_insert (struct list_elem *before, struct list_elem *elem) {
+list_insert (struct list_elem *before, struct list_elem *elem) { // tail 전에 삽입
 	ASSERT (is_interior (before) || is_tail (before));
 	ASSERT (elem != NULL);
 
@@ -200,7 +201,7 @@ list_push_front (struct list *list, struct list_elem *elem) {
    back in LIST. */
 void
 list_push_back (struct list *list, struct list_elem *elem) {
-	list_insert (list_end (list), elem);
+	list_insert (list_end (list), elem); // 
 }
 
 /* Removes ELEM from its list and returns the element that

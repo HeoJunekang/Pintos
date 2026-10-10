@@ -218,9 +218,9 @@ thread_create (const char *name, int priority,
    primitives in synch.h. */
 void
 thread_block (void) {
-	ASSERT (!intr_context ());
-	ASSERT (intr_get_level () == INTR_OFF);
-	thread_current ()->status = THREAD_BLOCKED;
+	ASSERT (!intr_context ());					//interrupt 처리중 아니고
+	ASSERT (intr_get_level () == INTR_OFF);		// interrupt 꺼져있고
+	thread_current ()->status = THREAD_BLOCKED;	// 현재 스레드 block 상태로 바꿈
 	schedule ();
 }
 
@@ -295,7 +295,7 @@ thread_exit (void) {
 /* Yields the CPU.  The current thread is not put to sleep and
    may be scheduled again immediately at the scheduler's whim. */
 void
-thread_yield (void) {
+thread_yield (void) {								//현재 스레드 ready_list에 넣음
 	struct thread *curr = thread_current ();
 	enum intr_level old_level;
 
@@ -304,7 +304,7 @@ thread_yield (void) {
 	old_level = intr_disable ();
 	if (curr != idle_thread)
 		list_push_back (&ready_list, &curr->elem);
-	do_schedule (THREAD_READY);
+	do_schedule (THREAD_READY); 					//스레드 상태 바꿈
 	intr_set_level (old_level);
 }
 
