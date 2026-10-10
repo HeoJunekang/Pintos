@@ -27,6 +27,7 @@
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
 static struct list ready_list;
+static struct list block_list;
 
 /* Idle thread. */
 static struct thread *idle_thread;
@@ -154,6 +155,20 @@ thread_tick (void) {
 		intr_yield_on_return ();
 }
 
+void
+block_list_up(){
+	struct thread block_thread;
+	while (block_list)
+	return block_list_up();
+}
+
+void
+thread_timer(uint64_t num){
+	struct thread *ptr = thread_current();
+	ptr->timer = num;
+	thread_block();
+}
+
 /* Prints thread statistics. */
 void
 thread_print_stats (void) {
@@ -221,6 +236,8 @@ thread_block (void) {
 	ASSERT (!intr_context ());
 	ASSERT (intr_get_level () == INTR_OFF);
 	thread_current ()->status = THREAD_BLOCKED;
+	struct thread *t = thread_current();
+	list_push_back (&block_list, &t->elem);
 	schedule ();
 }
 
