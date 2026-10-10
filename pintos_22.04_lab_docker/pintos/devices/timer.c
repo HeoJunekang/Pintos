@@ -102,13 +102,13 @@ timer_sleep (int64_t ticks) { //인자: 몇틱이나 기다릴건지
 	}
 	enum intr_level old_level;
 
-	ASSERT (intr_get_level () == INTR_ON);// interrupt 켜져있음
+	ASSERT (intr_get_level () == INTR_ON);// interrupt 켜져있음()
 	old_level = intr_disable ();
 	int64_t start = timer_ticks (); //언제 시작했는지 저장
 	struct thread *curr = thread_current (); // 현재 thread
 	curr-> wake_tick = start + ticks; 		// 깨어날 tick 할당
 
-	
+
 	list_push_back(&sleep_List, &curr->elem); // sleep_list에 block상태 thread 추가
 	thread_block();
 	intr_set_level (old_level);
@@ -150,15 +150,14 @@ timer_interrupt (struct intr_frame *args UNUSED) {
 	while(e != list_end(&sleep_List)){ 								// sleep_list가 끝날때까지
 		struct thread *t = list_entry(e, struct thread, elem);			//elem이 속한 thread 리턴
 		int64_t ticks = timer_ticks();
-		struct list_elem *next_elem = e->next; // list에서 지워지면 다음 elem을 보기위함
 
-		if(t->wake_tick > ticks){ //아직 시간이 안됨
-			
-		}else{ 					//지났거나 시간이 됨
-			list_remove(e);
+		if(t->wake_tick <= ticks){ //지났거나 시간이 됨
+			e = list_remove(e);
 			thread_unblock(t);
+					
+		}else{
+			e = list_next(e);
 		}
-		e = next_elem;
 	}
 }
 
