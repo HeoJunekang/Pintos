@@ -27,7 +27,7 @@
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
 static struct list ready_list;
-static struct list block_list;
+static struct list sleep_list;
 
 /* Idle thread. */
 static struct thread *idle_thread;
@@ -109,7 +109,7 @@ thread_init (void) {
 	/* Init the globla thread context */
 	lock_init (&tid_lock);
 	list_init (&ready_list);
-	list_init (&block_list);
+	list_init (&sleep_list);
 	list_init (&destruction_req);
 
 	/* Set up a thread structure for the running thread. */
@@ -159,7 +159,7 @@ thread_tick (void) {
 
 
 void
-thread_timer(uint64_t num){ //어디까지 쉴지 시간
+thread_timer(int64_t num){ //어디까지 쉴지 시간
 	struct thread *ptr = thread_current(); //현재 스레드
 	ptr->timer = num; //현재 스레드의 timer 을 어디까지 쉴지 정함
 	thread_block();
@@ -229,15 +229,15 @@ thread_create (const char *name, int priority,
    primitives in synch.h. */
 void
 thread_block (void) { //시간이 정해진 스레드가 오면
-	ASSERT (!intr_context ()); //인터럽트 끄기
+	ASSERT (!intr_context ());
 	ASSERT (intr_get_level () == INTR_OFF);
 	thread_current ()->status = THREAD_BLOCKED; //스레드의 상태를 BLOCKED 로 바꿈
 	schedule ();
 }
 void
 thread_block_list_push(void){
-	struct thread *crr = thread_current(); //현재 스레드를 crr로 
-	list_push_back (&block_list , &crr->elem); //현재 스레드를 블럭 리스트에 넣음
+	struct thread *crr = thread_current(); //현재 스레드를 crr로
+	list_push_back (&sleep_list , &crr->elem); //현재 스레드를 블럭 리스트에 넣음
 }
 
 /* Transitions a blocked thread T to the ready-to-run state.
@@ -559,12 +559,11 @@ schedule (void) {
 	struct thread *curr = running_thread (); //현재 running 상태인 스레드를 curr로
 	struct thread *next = next_thread_to_run (); //다음 스레드?
 
-	ASSERT (intr_get_level () == INTR_OFF);
+	ASSERT (intr_get_level () == INTR_OFF); //인터럽트가 off일때만 작동
 	ASSERT (curr->status != THREAD_RUNNING);
 	ASSERT (is_thread (next));
 	/* Mark us as running. */
-	curr->status = THREAD_BLOCKED;
-	next->status = THREAD_RUNNING; //다음의 상태를 러닝으로?
+	next->status = THREAD_RUNNING;
 
 	/* Start new time slice. */
 	thread_ticks = 0;

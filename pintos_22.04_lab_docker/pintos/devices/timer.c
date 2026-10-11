@@ -93,9 +93,10 @@ timer_sleep (int64_t ticks) {
 	int64_t start = timer_ticks ();
 	ASSERT (intr_get_level () == INTR_ON);
 	enum intr_level intr = intr_disable(); //전 상태로 복구시키기 위해 저장하는 변수
-	thread_timer(ticks+start);
-	intr_set_level(intr); //인터럽트 다시 키기
 	thread_block_list_push();
+	thread_timer(ticks+start);
+
+	intr_set_level(intr); //인터럽트 다시 키기
 	
 }
 
