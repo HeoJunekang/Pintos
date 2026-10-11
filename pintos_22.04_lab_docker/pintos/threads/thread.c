@@ -156,11 +156,6 @@ thread_tick (void) {
 		intr_yield_on_return ();
 }
 
-void
-block_list_up(struct thread list_){
-	struct thread block_thread;
-	return block_list_up(list_);
-}
 
 void
 thread_timer(uint64_t num){ //어디까지 쉴지 시간
@@ -236,6 +231,8 @@ thread_block (void) { //시간이 정해진 스레드가 오면
 	ASSERT (!intr_context ());
 	ASSERT (intr_get_level () == INTR_OFF);
 	thread_current ()->status = THREAD_BLOCKED; //스레드의 상태를 BLOCKED 로 바꿈
+	struct thread *crr = thread_current(); //현재 스레드를 crr로 
+	list_push_back (&block_list , &crr->elem); //현재 스레드를 블럭 리스트에 넣음
 	schedule ();
 }
 
