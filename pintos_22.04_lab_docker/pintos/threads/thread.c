@@ -245,15 +245,20 @@ void
 thread_sleep_list_out(int64_t ticks){
 	struct list_elem *crr = list_begin(&sleep_list);
 	while(true){
-	struct thread *ptr = list_entry(crr->prev,struct thread,elem);
-	if(ptr->timer<=ticks){ //목표 시각이 현재 시각보다 늦거나 간다면
-		thread_unblock(crr); //요소 언블락 하기
-		crr = list_remove(&sleep_list); //sleep 리스트에서 지워버리고 다음요소 위치 반환하기
-		}
-	crr = list_next(&sleep_list);
-	if(crr->next==&sleep_list.tail){
+
+	if(crr==&sleep_list.tail){
 		break;
 	}
+	struct thread *ptr = list_entry(crr,struct thread,elem);
+	if(ptr->timer<=ticks){ //목표 시각이 현재 시각보다 늦거나 간다면
+		crr = list_remove(crr); //sleep 리스트에서 지워버리고 다음요소 위치 반환하기
+		thread_unblock(ptr); //요소 언블락 하기
+		}
+	else{
+		crr = list_next(crr);
+	}
+
+
 	}
 	
 	
