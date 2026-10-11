@@ -236,20 +236,24 @@ thread_block (void) { //시간이 정해진 스레드가 오면
 }
 
 void
-thread_block_list_push(void){
+thread_sleep_list_push(void){
 	struct thread *crr = thread_current(); //현재 스레드를 crr로
 	list_push_back (&sleep_list , &crr->elem); //현재 스레드를 블럭 리스트에 넣음
 }
 
 void
-thread_block_list_out(int64_t ticks){
-	struct thread *crr = list_begin(&sleep_list);
-	while(crr==NULL){
-	if(crr->timer<=ticks){ //만약 현재 요소의 시간이 현재 틱보다 늦거나 같다면
+thread_sleep_list_out(int64_t ticks){
+	struct list_elem *crr = list_begin(&sleep_list);
+	while(true){
+	struct thread *ptr = list_entry(crr->prev,struct thread,elem);
+	if(ptr->timer<=ticks){ //목표 시각이 현재 시각보다 늦거나 간다면
 		thread_unblock(crr); //요소 언블락 하기
 		crr = list_remove(&sleep_list); //sleep 리스트에서 지워버리고 다음요소 위치 반환하기
 		}
-
+	crr = list_next(&sleep_list);
+	if(crr->next==&sleep_list.tail){
+		break;
+	}
 	}
 	
 	
