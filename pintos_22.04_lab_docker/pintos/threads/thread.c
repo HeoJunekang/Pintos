@@ -231,10 +231,13 @@ void
 thread_block (void) { //시간이 정해진 스레드가 오면
 	ASSERT (!intr_context ());
 	ASSERT (intr_get_level () == INTR_OFF);
+
+	schedule ();
+}
+thread_block_list_push(void){
 	struct thread *crr = thread_current(); //현재 스레드를 crr로 
 	thread_current ()->status = THREAD_BLOCKED; //스레드의 상태를 BLOCKED 로 바꿈
 	list_push_back (&block_list , &crr->elem); //현재 스레드를 블럭 리스트에 넣음
-	schedule ();
 }
 
 /* Transitions a blocked thread T to the ready-to-run state.
