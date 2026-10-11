@@ -55,7 +55,7 @@ is_tail (struct list_elem *elem) {
 
 /* Initializes LIST as an empty list. */
 void
-list_init (struct list *list) {
+list_init (struct list *list) { //리스트 초기화 부분
 	ASSERT (list != NULL);
 	list->head.prev = NULL;
 	list->head.next = &list->tail;
@@ -64,19 +64,19 @@ list_init (struct list *list) {
 }
 
 /* Returns the beginning of LIST.  */
-struct list_elem *
-list_begin (struct list *list) {
-	ASSERT (list != NULL);
-	return list->head.next;
+struct list_elem * //리스트의 주소를 반환한다.
+list_begin (struct list *list) { //탐색할 리스트의 주소를 받는다.
+	ASSERT (list != NULL); //리스트 주소가 NULL인지 검사
+	return list->head.next; //헤드 바로 다음 주소를 반환
 }
 
 /* Returns the element after ELEM in its list.  If ELEM is the
    last element in its list, returns the list tail.  Results are
    undefined if ELEM is itself a list tail. */
 struct list_elem *
-list_next (struct list_elem *elem) {
-	ASSERT (is_head (elem) || is_interior (elem));
-	return elem->next;
+list_next (struct list_elem *elem) { //현재 요소의 주소를 받는다.
+	ASSERT (is_head (elem) || is_interior (elem)); //헤드 또는 내부 요소인지 검사 tail은 X
+	return elem->next; //현재 요소가 저장한 다음 주소를 반환
 }
 
 /* Returns LIST's tail.

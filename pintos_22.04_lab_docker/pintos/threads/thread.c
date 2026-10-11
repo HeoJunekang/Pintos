@@ -116,6 +116,7 @@ thread_init (void) {
 	init_thread (initial_thread, "main", PRI_DEFAULT);
 	initial_thread->status = THREAD_RUNNING;
 	initial_thread->tid = allocate_tid ();
+	initial_thread->timer =NULL; //스레드 타임 초기화
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -156,16 +157,15 @@ thread_tick (void) {
 }
 
 void
-block_list_up(){
+block_list_up(struct thread list_){
 	struct thread block_thread;
-	while (block_list)
-	return block_list_up();
+	return block_list_up(list_);
 }
 
 void
-thread_timer(uint64_t num){
-	struct thread *ptr = thread_current();
-	ptr->timer = num;
+thread_timer(uint64_t num){ //어디까지 쉴지 시간
+	struct thread *ptr = thread_current(); //현재 스레드
+	ptr->timer = num; //현재 스레드의 timer 을 어디까지 쉴지 정함
 	thread_block();
 }
 
@@ -232,10 +232,10 @@ thread_create (const char *name, int priority,
    is usually a better idea to use one of the synchronization
    primitives in synch.h. */
 void
-thread_block (void) {
+thread_block (void) { //시간이 정해진 스레드가 오면
 	ASSERT (!intr_context ());
 	ASSERT (intr_get_level () == INTR_OFF);
-	thread_current ()->status = THREAD_BLOCKED;
+	thread_current ()->status = THREAD_BLOCKED; //스레드의 상태를 BLOCKED 로 바꿈
 	schedule ();
 }
 
@@ -555,14 +555,15 @@ do_schedule(int status) {
 
 static void
 schedule (void) {
-	struct thread *curr = running_thread ();
-	struct thread *next = next_thread_to_run ();
+	struct thread *curr = running_thread (); //현재 running 상태인 스레드를 curr로
+	struct thread *next = next_thread_to_run (); //다음 스레드?
 
 	ASSERT (intr_get_level () == INTR_OFF);
 	ASSERT (curr->status != THREAD_RUNNING);
 	ASSERT (is_thread (next));
 	/* Mark us as running. */
-	next->status = THREAD_RUNNING;
+	curr->status = THREAD_BLOCKED;
+	next->status = THREAD_RUNNING; //다음의 상태를 러닝으로?
 
 	/* Start new time slice. */
 	thread_ticks = 0;
