@@ -312,18 +312,43 @@ thread_yield (void) {
 }
 
 /* Compare */
-void
-thread_cmp (const struct list_elem *a, const struct list_elem *b) {
-	return &a < &b ? true : false;
+bool
+thread_cmp (const struct list_elem *a, const struct list_elem *b, void *aux) {
+	struct thread *ta = list_entry(a, struct thread, elem);
+	struct thread *tb = list_entry(b, struct thread, elem);
+
+	return ta->wakeup_tick < tb->wakeup_tick ? true : false;
 }
 
 /* Sleep */
 void
-thread_sleep (int time) {
+thread_sleep (int64_t time) {
 	struct thread *curr = thread_current ();
+	enum intr_level old_level;
+
+	curr->wakeup_tick = time;
+
+	old_level = intr_disable (); //타이머 인터럽트
 
 	list_insert_ordered(&sleep_list, &curr->elem, thread_cmp, NULL);
 	thread_block ();
+	
+	intr_set_level (old_level); //타이머 인터럽트
+}
+
+/* Awake */
+void
+thread_awake (int64_t cur) {
+	while (!list_empty(&sleep_list)) {
+        struct thread *first = list_entry(list_front(&sleep_list), struct thread, elem);
+
+		if (cur >= first->wakeup_tick) {
+            list_pop_front(&sleep_list);
+            thread_unblock(first);
+        } 
+		else
+            break; 
+	}
 }
 
 /* Sets the current thread's priority to NEW_PRIORITY. */
