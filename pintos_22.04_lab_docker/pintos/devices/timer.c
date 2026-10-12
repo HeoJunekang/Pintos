@@ -108,7 +108,7 @@ timer_sleep (int64_t ticks) { //인자: 몇틱이나 기다릴건지
 	struct thread *curr = thread_current (); // 현재 thread
 	curr-> wake_tick = start + ticks; 		// 깨어날 tick 할당
 
-
+	
 	list_push_back(&sleep_List, &curr->elem); // sleep_list에 block상태 thread 추가
 	thread_block();
 	intr_set_level (old_level);
