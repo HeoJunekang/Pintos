@@ -133,9 +133,9 @@ intr_set_level (enum intr_level level) {
 
 /* Enables interrupts and returns the previous interrupt status. */
 enum intr_level
-intr_enable (void) {
+intr_enable (void) { //현재 인터럽트 상태를 저장하고 반환 //인터럽트를 키는 함수
 	enum intr_level old_level = intr_get_level ();
-	ASSERT (!intr_context ());
+	ASSERT (!intr_context ());//인터럽트 상태를 반대로?
 
 	/* Enable interrupts by setting the interrupt flag.
 
@@ -148,8 +148,8 @@ intr_enable (void) {
 
 /* Disables interrupts and returns the previous interrupt status. */
 enum intr_level
-intr_disable (void) {
-	enum intr_level old_level = intr_get_level ();
+intr_disable (void) {//인터럽트를 끄는 함수
+	enum intr_level old_level = intr_get_level (); //현재 스레드의 상태를 저장 하고 return 으로 반환
 
 	/* Disable interrupts by clearing the interrupt flag.
 	   See [IA32-v2b] "CLI" and [IA32-v3a] 5.8.1 "Masking Maskable
