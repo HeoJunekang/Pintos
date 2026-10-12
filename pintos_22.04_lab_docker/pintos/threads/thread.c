@@ -27,6 +27,7 @@
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
 static struct list ready_list;
+static struct list sleep_list;
 
 /* Idle thread. */
 static struct thread *idle_thread;
@@ -108,6 +109,7 @@ thread_init (void) {
 	/* Init the globla thread context */
 	lock_init (&tid_lock);
 	list_init (&ready_list);
+	list_init (&sleep_list);
 	list_init (&destruction_req);
 
 	/* Set up a thread structure for the running thread. */
@@ -115,6 +117,7 @@ thread_init (void) {
 	init_thread (initial_thread, "main", PRI_DEFAULT);
 	initial_thread->status = THREAD_RUNNING;
 	initial_thread->tid = allocate_tid ();
+	initial_thread->timer =NULL; //스레드 타임 초기화
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -152,6 +155,14 @@ thread_tick (void) {
 	/* Enforce preemption. */
 	if (++thread_ticks >= TIME_SLICE)
 		intr_yield_on_return ();
+}
+
+
+void
+thread_timer(int64_t num){ //어디까지 쉴지 시간
+	struct thread *ptr = thread_current(); //현재 스레드
+	ptr->timer = num; //현재 스레드의 timer 을 어디까지 쉴지 정함
+	thread_block();
 }
 
 /* Prints thread statistics. */
@@ -217,11 +228,41 @@ thread_create (const char *name, int priority,
    is usually a better idea to use one of the synchronization
    primitives in synch.h. */
 void
-thread_block (void) {
+thread_block (void) { //시간이 정해진 스레드가 오면
 	ASSERT (!intr_context ());
 	ASSERT (intr_get_level () == INTR_OFF);
-	thread_current ()->status = THREAD_BLOCKED;
+	thread_current ()->status = THREAD_BLOCKED; //스레드의 상태를 BLOCKED 로 바꿈
 	schedule ();
+}
+
+void
+thread_sleep_list_push(void){
+	struct thread *crr = thread_current(); //현재 스레드를 crr로
+	list_push_back (&sleep_list , &crr->elem); //현재 스레드를 블럭 리스트에 넣음
+}
+
+void
+thread_sleep_list_out(int64_t ticks){
+	struct list_elem *crr = list_begin(&sleep_list);
+	while(true){
+
+	if(crr==&sleep_list.tail){
+		break;
+	}
+	struct thread *ptr = list_entry(crr,struct thread,elem);
+	if(ptr->timer<=ticks){ //목표 시각이 현재 시각보다 늦거나 간다면
+		crr = list_remove(crr); //sleep 리스트에서 지워버리고 다음요소 위치 반환하기
+		thread_unblock(ptr); //요소 언블락 하기
+		}
+	else{
+		crr = list_next(crr);
+	}
+
+
+	}
+	
+	
+
 }
 
 /* Transitions a blocked thread T to the ready-to-run state.
@@ -540,10 +581,10 @@ do_schedule(int status) {
 
 static void
 schedule (void) {
-	struct thread *curr = running_thread ();
-	struct thread *next = next_thread_to_run ();
+	struct thread *curr = running_thread (); //현재 running 상태인 스레드를 curr로
+	struct thread *next = next_thread_to_run (); //다음 스레드?
 
-	ASSERT (intr_get_level () == INTR_OFF);
+	ASSERT (intr_get_level () == INTR_OFF); //인터럽트가 off일때만 작동
 	ASSERT (curr->status != THREAD_RUNNING);
 	ASSERT (is_thread (next));
 	/* Mark us as running. */
