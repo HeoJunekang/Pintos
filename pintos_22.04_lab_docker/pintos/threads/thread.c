@@ -117,7 +117,7 @@ thread_init (void) {
 	init_thread (initial_thread, "main", PRI_DEFAULT);
 	initial_thread->status = THREAD_RUNNING;
 	initial_thread->tid = allocate_tid ();
-	initial_thread->timer =NULL; //스레드 타임 초기화
+	initial_thread->timer = NULL; //스레드 타임 초기화
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -273,15 +273,28 @@ thread_sleep_list_out(int64_t ticks){
    be important: if the caller had disabled interrupts itself,
    it may expect that it can atomically unblock a thread and
    update other data. */
+static bool 
+priority_higher(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED){
+	struct thread *thread_a = list_entry(a, struct thread, elem);
+	struct thread *thread_b= list_entry(b, struct thread, elem);
+	if(thread_a->priority > thread_b->priority){
+		return true;
+	}else{
+		return false;
+	}
+}
+
 void
 thread_unblock (struct thread *t) {
 	enum intr_level old_level;
+	list_less_func *less = priority_higher;
 
 	ASSERT (is_thread (t));
 
 	old_level = intr_disable ();
 	ASSERT (t->status == THREAD_BLOCKED);
-	list_push_back (&ready_list, &t->elem);
+	// list_push_back (&ready_list, &t->elem);
+	list_insert_ordered (&ready_list, &t->elem, less, NULL);
 	t->status = THREAD_READY;
 	intr_set_level (old_level);
 }
@@ -339,12 +352,14 @@ void
 thread_yield (void) {
 	struct thread *curr = thread_current ();
 	enum intr_level old_level;
+	list_less_func *less = priority_higher;
 
 	ASSERT (!intr_context ());
 
 	old_level = intr_disable ();
 	if (curr != idle_thread)
-		list_push_back (&ready_list, &curr->elem);
+		//list_push_back (&ready_list, &curr->elem);
+		list_insert_ordered (&ready_list, &curr->elem, less, NULL);
 	do_schedule (THREAD_READY);
 	intr_set_level (old_level);
 }
