@@ -232,15 +232,29 @@ thread_block (void) {
    be important: if the caller had disabled interrupts itself,
    it may expect that it can atomically unblock a thread and
    update other data. */
+
+static bool 
+priority_higher(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED){
+	struct thread *thread_a = list_entry(a, struct thread, elem);
+	struct thread *thread_b= list_entry(b, struct thread, elem);
+	if(thread_a->priority > thread_b->priority){
+		return true;
+	}else{
+		return false;
+	}
+}
+
 void
 thread_unblock (struct thread *t) {
 	enum intr_level old_level;
+	list_less_func *less = priority_higher;
 
 	ASSERT (is_thread (t));
 
 	old_level = intr_disable ();
 	ASSERT (t->status == THREAD_BLOCKED);
-	list_push_back (&ready_list, &t->elem);
+	// list_push_back (&ready_list, &t->elem);
+	list_insert_ordered (&ready_list, &t->elem, less, NULL);
 	t->status = THREAD_READY;
 	intr_set_level (old_level);
 }
@@ -302,8 +316,10 @@ thread_yield (void) {								//현재 스레드 ready_list에 넣음
 	ASSERT (!intr_context ());
 
 	old_level = intr_disable ();
+	list_less_func *less = priority_higher;
 	if (curr != idle_thread)
-		list_push_back (&ready_list, &curr->elem);
+		//list_push_back (&ready_list, &curr->elem);
+		list_insert_ordered (&ready_list, &curr->elem, less, NULL);
 	do_schedule (THREAD_READY); 					//스레드 상태 바꿈
 	intr_set_level (old_level);
 }
