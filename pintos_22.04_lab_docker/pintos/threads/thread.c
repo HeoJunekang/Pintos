@@ -258,12 +258,7 @@ thread_sleep_list_out(int64_t ticks){
 	else{
 		crr = list_next(crr);
 	}
-
-
 	}
-	
-	
-
 }
 
 /* Transitions a blocked thread T to the ready-to-run state.
