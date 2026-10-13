@@ -128,11 +128,9 @@ thread_start (void) {
 	struct semaphore idle_started;
 	sema_init (&idle_started, 0);
 	thread_create ("idle", PRI_MIN, idle, &idle_started);
-	thread_runing_check(); //스레드 만들어지면서 체크
 
 	/* Start preemptive thread scheduling. */
 	intr_enable ();
-
 	/* Wait for the idle thread to initialize idle_thread. */
 	sema_down (&idle_started);
 }
@@ -218,7 +216,7 @@ thread_create (const char *name, int priority,
 
 	/* Add to run queue. */
 	thread_unblock (t);
-		
+	thread_runing_check(); //스레드 만들어지면서 체크
 	return tid;
 }
 
@@ -375,7 +373,7 @@ thread_runing_check(void){//runing 스레드와 Ready_list 의 첫번째와 비�
 
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
-thread_set_priority (int new_priority) {
+thread_set_priority (int new_priority) { //FIFO 기능
 	thread_current ()->priority = new_priority;
 	thread_runing_check();
 }
