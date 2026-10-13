@@ -117,7 +117,7 @@ thread_init (void) {
 	init_thread (initial_thread, "main", PRI_DEFAULT);
 	initial_thread->status = THREAD_RUNNING;
 	initial_thread->tid = allocate_tid ();
-	initial_thread->timer = NULL; //스레드 타임 초기화
+	initial_thread->timer = 0; //스레드 타임 초기화
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -131,7 +131,6 @@ thread_start (void) {
 
 	/* Start preemptive thread scheduling. */
 	intr_enable ();
-
 	/* Wait for the idle thread to initialize idle_thread. */
 	sema_down (&idle_started);
 }
@@ -217,7 +216,7 @@ thread_create (const char *name, int priority,
 
 	/* Add to run queue. */
 	thread_unblock (t);
-
+	thread_runing_check(); //스레드 만들어지면서 체크
 	return tid;
 }
 
@@ -257,12 +256,7 @@ thread_sleep_list_out(int64_t ticks){
 	else{
 		crr = list_next(crr);
 	}
-
-
 	}
-	
-	
-
 }
 
 /* Transitions a blocked thread T to the ready-to-run state.
@@ -295,6 +289,7 @@ thread_unblock (struct thread *t) {
 	ASSERT (t->status == THREAD_BLOCKED);
 	// list_push_back (&ready_list, &t->elem);
 	list_insert_ordered (&ready_list, &t->elem, less, NULL);
+
 	t->status = THREAD_READY;
 	intr_set_level (old_level);
 }
@@ -364,10 +359,24 @@ thread_yield (void) {
 	intr_set_level (old_level);
 }
 
+void
+thread_runing_check(void){//runing 스레드와 Ready_list 의 첫번째와 비교하기 
+	if (!list_empty(&ready_list)){ //레디 요소안에 값이 있으면
+		struct thread *curr = thread_current(); //현재 runing 스레드를 runing 포인터로 하기
+		// struct list ready = list_front(&ready_list); //ready 포인터에 ready_list 의 첫번째 요소 가져오기
+		struct list_elem *ready = list_begin(&ready_list);
+		struct thread *ready_first = list_entry(ready,struct thread,elem);
+		if (curr->priority < ready_first->priority){ //만약 run 스레드 우선순위가 ready 첫번째 스레드 보다 작다면 바꿔라
+			thread_yield();
+		}
+	}
+}
+
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
-thread_set_priority (int new_priority) {
+thread_set_priority (int new_priority) { //FIFO 기능
 	thread_current ()->priority = new_priority;
+	thread_runing_check();
 }
 
 /* Returns the current thread's priority. */
