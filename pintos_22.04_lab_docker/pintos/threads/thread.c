@@ -289,6 +289,7 @@ thread_unblock (struct thread *t) {
 	ASSERT (t->status == THREAD_BLOCKED);
 	// list_push_back (&ready_list, &t->elem);
 	list_insert_ordered (&ready_list, &t->elem, less, NULL);
+
 	t->status = THREAD_READY;
 	intr_set_level (old_level);
 }
@@ -361,11 +362,11 @@ thread_yield (void) {
 void
 thread_runing_check(void){//runing 스레드와 Ready_list 의 첫번째와 비교하기 
 	if (!list_empty(&ready_list)){ //레디 요소안에 값이 있으면
-		struct thread *runing = running_thread(); //현재 runing 스레드를 runing 포인터로 하기
+		struct thread *curr = thread_current(); //현재 runing 스레드를 runing 포인터로 하기
 		// struct list ready = list_front(&ready_list); //ready 포인터에 ready_list 의 첫번째 요소 가져오기
 		struct list_elem *ready = list_begin(&ready_list);
 		struct thread *ready_first = list_entry(ready,struct thread,elem);
-		if (runing->priority < ready_first->priority){ //만약 run 스레드 우선순위가 ready 첫번째 스레드 보다 작다면 바꿔라
+		if (curr->priority < ready_first->priority){ //만약 run 스레드 우선순위가 ready 첫번째 스레드 보다 작다면 바꿔라
 			thread_yield();
 		}
 	}
