@@ -297,6 +297,20 @@ cond_wait (struct condition *cond, struct lock *lock) {
 	lock_acquire (lock);
 }
 
+bool
+sema_priority_higher (struct list_elem *a, struct list_elem *b, void *aux) {
+	struct semaphore_elem *sa = list_entry(a, struct semaphore_elem, elem); // priority_higher 처럼
+	struct semaphore_elem *sb = list_entry(b, struct semaphore_elem, elem);
+
+	struct list_elem *thread_elem_a = list_begin(&sa->semaphore.waiters); 	// sa의 semaphore의 waiters의 맨 앞 원소
+	struct list_elem *thread_elem_b = list_begin(&sb->semaphore.waiters);
+
+	struct thread *ta = list_entry(thread_elem_a, struct thread, elem); 	// 주소
+    struct thread *tb = list_entry(thread_elem_b, struct thread, elem);
+
+    return ta->priority > tb->priority;
+}
+
 /* If any threads are waiting on COND (protected by LOCK), then
    this function signals one of them to wake up from its wait.
    LOCK must be held before calling this function.
@@ -311,9 +325,11 @@ cond_signal (struct condition *cond, struct lock *lock UNUSED) {
 	ASSERT (!intr_context ());
 	ASSERT (lock_held_by_current_thread (lock));
 
-	if (!list_empty (&cond->waiters))
-		sema_up (&list_entry (list_pop_front (&cond->waiters),
-					struct semaphore_elem, elem)->semaphore);
+
+	if (!list_empty (&cond->waiters)) {
+		list_sort(&cond->waiters, sema_priority_higher, NULL);
+		sema_up (&list_entry (list_pop_front (&cond->waiters), struct semaphore_elem, elem)->semaphore);
+	}
 } //cond = waiters리스트를 가지고 잇음
 //이건 waiters 리스트에서 하나를 뽑아서 해당하는 waiters에 해당하는 semaphore찾기
 
