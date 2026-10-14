@@ -73,7 +73,7 @@ sema_down (struct semaphore *sema) {
 	old_level = intr_disable ();
 	while (sema->value == 0) {
 		list_insert_ordered(&sema->waiters, &thread_current ()->elem,less, NULL);
-		thread_block ();
+		thread_block ();															//여기서 멈추고 있음 그리고 sema_up이 되면 깨어나서 다시 실행
 	}
 	sema->value--;
 	intr_set_level (old_level);
@@ -191,11 +191,32 @@ lock_init (struct lock *lock) {
    interrupts disabled, but interrupts will be turned back on if
    we need to sleep. */
 void
+sema_donation(struct lock *lock) {
+	ASSERT (lock != NULL);
+	// struct list_elem *waiter_front_elem = list_front(&lock->semaphore.waiters);
+	// if(waiter_front_elem== NULL){
+	// 	return;
+	// }
+	// struct thread *waiters_first_thread;
+	// waiters_first_thread = list_entry(waiter_front_elem, struct thread, elem);
+	// if(lock->holder->priority < waiters_first_thread->priority)	//현재 쓰레드의 우선순위가 lock을 가지고 있는 쓰레드의 우선순위보다 크면
+	// 	lock->holder->priority = waiters_first_thread->priority;  // 도네이션 함
+	// if(lock->holder == NULL){
+	// 	return;
+	// }
+	if(lock->holder->priority < thread_current()->priority)	//현재 쓰레드의 우선순위가 lock을 가지고 있는 쓰레드의 우선순위보다 크면
+		lock->holder->priority = thread_current()->priority;
+}
+
+void
 lock_acquire (struct lock *lock) {
 	ASSERT (lock != NULL);
 	ASSERT (!intr_context ());
 	ASSERT (!lock_held_by_current_thread (lock));
 
+	if(lock->semaphore.value == 0){
+		sema_donation(lock);
+	}
 	sema_down (&lock->semaphore);
 	lock->holder = thread_current ();
 }
