@@ -29,8 +29,8 @@ test_priority_donate_one (void)
   /* Make sure our priority is the default. */
   ASSERT (thread_get_priority () == PRI_DEFAULT);
 
-  lock_init (&lock);
-  lock_acquire (&lock);
+  lock_init (&lock); //소유하고 잇는 thread = NULL, semaphore값을 1로 세팅
+  lock_acquire (&lock); //sema다운, 현재 쓰레드로 lock
   thread_create ("acquire1", PRI_DEFAULT + 1, acquire1_thread_func, &lock);
   msg ("This thread should have priority %d.  Actual priority: %d.",
        PRI_DEFAULT + 1, thread_get_priority ());

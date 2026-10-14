@@ -57,16 +57,22 @@ sema_init (struct semaphore *sema, unsigned value) {
    interrupts disabled, but if it sleeps then the next scheduled
    thread will probably turn interrupts back on. This is
    sema_down function. */
+   // 현재 실행중인 thread가 sema_down을 호출 -> block이 되면서 sema-up? 예상
+   //그럼 아직 다 못한 thread들이 기다리고 있겠지 
+   //다시 접근하고자 하는 thread가 sema_down을 호출 -> 그 thread는 waiters로 감 그리고 block함(즉 임계영역 못쓰게함) 이거까지 이해
+   //다음거 실행됨
+   //sema_up되는 시점은?
 void
 sema_down (struct semaphore *sema) {
 	enum intr_level old_level;
+	list_less_func *less = priority_higher;
 
 	ASSERT (sema != NULL);
 	ASSERT (!intr_context ());
 
 	old_level = intr_disable ();
 	while (sema->value == 0) {
-		list_push_back (&sema->waiters, &thread_current ()->elem);
+		list_insert_ordered(&sema->waiters, &thread_current ()->elem,less, NULL);
 		thread_block ();
 	}
 	sema->value--;
@@ -102,6 +108,8 @@ sema_try_down (struct semaphore *sema) {
    and wakes up one thread of those waiting for SEMA, if any.
 
    This function may be called from an interrupt handler. */
+   //그럼 실행되던 thread가(임계영역을 사용하고 있던) sema_up을 하게 되면
+   // waiters에 있던 thread하나를 다시 unblock함 -> 다시 시도하라
 void
 sema_up (struct semaphore *sema) {
 	enum intr_level old_level;
@@ -224,6 +232,7 @@ lock_release (struct lock *lock) {
 
 	lock->holder = NULL;
 	sema_up (&lock->semaphore);
+	thread_running_check();
 }
 
 /* Returns true if the current thread holds LOCK, false
@@ -305,7 +314,8 @@ cond_signal (struct condition *cond, struct lock *lock UNUSED) {
 	if (!list_empty (&cond->waiters))
 		sema_up (&list_entry (list_pop_front (&cond->waiters),
 					struct semaphore_elem, elem)->semaphore);
-}
+} //cond = waiters리스트를 가지고 잇음
+//이건 waiters 리스트에서 하나를 뽑아서 해당하는 waiters에 해당하는 semaphore찾기
 
 /* Wakes up all threads, if any, waiting on COND (protected by
    LOCK).  LOCK must be held before calling this function.
