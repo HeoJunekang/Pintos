@@ -216,7 +216,7 @@ thread_create (const char *name, int priority,
 
 	/* Add to run queue. */
 	thread_unblock (t);
-	thread_runing_check(); //스레드 만들어지면서 체크
+	thread_running_check(); //스레드 만들어지면서 체크
 	return tid;
 }
 
@@ -267,7 +267,7 @@ thread_sleep_list_out(int64_t ticks){
    be important: if the caller had disabled interrupts itself,
    it may expect that it can atomically unblock a thread and
    update other data. */
-static bool 
+bool 
 priority_higher(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED){
 	struct thread *thread_a = list_entry(a, struct thread, elem);
 	struct thread *thread_b= list_entry(b, struct thread, elem);
@@ -360,7 +360,7 @@ thread_yield (void) {
 }
 
 void
-thread_runing_check(void){//runing 스레드와 Ready_list 의 첫번째와 비교하기 
+thread_running_check(void){//runing 스레드와 Ready_list 의 첫번째와 비교하기 
 	if (!list_empty(&ready_list)){ //레디 요소안에 값이 있으면
 		struct thread *curr = thread_current(); //현재 runing 스레드를 runing 포인터로 하기
 		// struct list ready = list_front(&ready_list); //ready 포인터에 ready_list 의 첫번째 요소 가져오기
@@ -376,7 +376,7 @@ thread_runing_check(void){//runing 스레드와 Ready_list 의 첫번째와 비�
 void
 thread_set_priority (int new_priority) { //FIFO 기능
 	thread_current ()->priority = new_priority;
-	thread_runing_check();
+	thread_running_check();
 }
 
 /* Returns the current thread's priority. */

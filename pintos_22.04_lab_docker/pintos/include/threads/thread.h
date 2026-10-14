@@ -130,6 +130,9 @@ void thread_sleep_list_push(void);
 void thread_sleep_list_out(int64_t ticks);
 void thread_unblock (struct thread *);
 
+bool priority_higher(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED);
+void thread_running_check(void);
+
 struct thread *thread_current (void);
 tid_t thread_tid (void);
 const char *thread_name (void);
